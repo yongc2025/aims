@@ -1,0 +1,22 @@
+{
+  "name": "aims-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons": "latest",
+    "antd": "latest",
+    "echarts": "latest",
+    "echarts-for-react": "latest",
+    "framer-motion": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router-dom": "latest"
+  },
+  "devDependencies": {
+    "@
