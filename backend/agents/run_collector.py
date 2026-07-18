@@ -1,13 +1,13 @@
 """AIMS collector pipeline entrypoint."""
 
+import sys
+from datetime import datetime
+
 from backend.agents.market_collector import MarketCollectorAgent
+from backend.agents.validator_agent import validate_market_data
+from backend.storage.markdown import generate_markdown
+from backend.storage.repository import save_market_report
 
 
 def collect_market_data(trade_date: str):
-    agent = MarketCollectorAgent()
-    return agent.collect(trade_date)
-
-
-if __name__ == "__main__":
-    result = collect_market_data("2026-07-17")
-    print(result)
+    """Run the
