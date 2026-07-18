@@ -6,27 +6,21 @@ from pathlib import Path
 DB_PATH = Path("storage/aims.db")
 
 
-def get_connection():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    return sqlite3.connect(DB_PATH)
+MARKET_SENTIMENT_TABLE = """
+CREATE TABLE IF NOT EXISTS market_sentiment_daily (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trade_date TEXT UNIQUE NOT NULL,
+    up_count INTEGER,
+    down_count INTEGER,
+    limit_up_count INTEGER,
+    limit_down_count INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+"""
 
 
-def init_database():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS market_reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            trade_date TEXT UNIQUE NOT NULL,
-            schema_version TEXT NOT NULL,
-            json_content TEXT NOT NULL,
-            markdown_content TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """
-    )
-
-    conn.commit()
-    conn.close()
+MARGIN_TABLE = """
+CREATE TABLE IF NOT EXISTS margin_balance_weekly (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    week_date TEXT UNIQUE NOT NULL,
+    margin_balance
