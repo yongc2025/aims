@@ -2,7 +2,9 @@
 
 from datetime import date
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+
+from backend.api.market_service import query_market_by_date
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
@@ -14,11 +16,13 @@ def health():
 
 @router.get("/{trade_date}")
 def get_market(trade_date: date):
-    """Get market data by trade date.
+    """Get stored market data by trade date."""
+    result = query_market_by_date(trade_date.isoformat())
 
-    Storage integration will be connected in the next stage.
-    """
-    return {
-        "date": trade_date.isoformat(),
-        "status": "pending_storage_integration",
-    }
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail="market data not found",
+        )
+
+    return result
