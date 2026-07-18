@@ -1,5 +1,6 @@
 """AIMS collector pipeline entrypoint."""
 
+import json
 import sys
 from datetime import datetime
 
@@ -10,4 +11,4 @@ from backend.storage.repository import save_market_report
 
 
 def collect_market_data(trade_date: str):
-    """Run the
+    ""
