@@ -4,8 +4,6 @@ Verifies the complete pipeline contract:
 Agent -> Validator -> Storage -> Report.
 """
 
-from datetime import datetime
-
 from backend.agents.validator_agent import validate_market_data
 
 
@@ -15,10 +13,12 @@ def test_collector_pipeline_contract():
         "date": "2026-07-17",
         "source": "integration-test",
         "market": {
-            "status": "collected"
-        }
+            "status": "collected",
+        },
     }
 
     result = validate_market_data(payload)
 
-    assert result["
+    assert result["status"] == "passed"
+    assert result["quality_score"] == 100
+    assert result["errors"] == []

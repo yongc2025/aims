@@ -20,15 +20,16 @@ class ValidationResult:
         }
 
 
-def validate_market_data(data: dict[str, Any]) -> ValidationResult:
+def validate_market_data(data: dict[str, Any]) -> dict[str, Any]:
     errors = []
+
+    if not isinstance(data, dict):
+        errors.append("data must be dictionary")
+        return ValidationResult(False, errors, 0).to_dict()
 
     for field in REQUIRED_FIELDS:
         if not data.get(field):
             errors.append(f"missing required field: {field}")
-
-    if not isinstance(data, dict):
-        errors.append("data must be dictionary")
 
     score = max(0, 100 - len(errors) * 20)
 
@@ -36,4 +37,4 @@ def validate_market_data(data: dict[str, Any]) -> ValidationResult:
         passed=len(errors) == 0,
         errors=errors,
         score=score,
-    )
+    ).to_dict()

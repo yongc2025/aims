@@ -16,9 +16,7 @@ def verify_database():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        )
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = {row[0] for row in cursor.fetchall()}
 
         required = {
@@ -43,7 +41,7 @@ if __name__ == "__main__":
     failed = False
 
     for name, status in verify_database():
-        symbol = "✓" if status else "✗"
+        symbol = "OK" if status else "FAIL"
         print(f"{symbol} {name}")
         if not status:
             failed = True

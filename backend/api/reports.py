@@ -20,5 +20,5 @@ def get_report(trade_date: str):
 
     return {
         "date": trade_date,
-        "content": report.get("markdown_content"),
+        "content": report.get("markdown"),
     }

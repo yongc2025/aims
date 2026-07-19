@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 
+from backend.api.analysis import router as analysis_router
 from backend.api.market import router as market_router
 from backend.api.reports import router as reports_router
 
@@ -13,6 +14,7 @@ app = FastAPI(
 
 app.include_router(market_router)
 app.include_router(reports_router)
+app.include_router(analysis_router)
 
 
 @app.get("/")

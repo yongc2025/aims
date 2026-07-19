@@ -1,0 +1,469 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================================================================
+   AIMS — AI Market Intelligence System
+   Dark Themed Financial Dashboard
+   ================================================================ */
+
+/* ---- Base Layer ---- */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: #050816;
+    color: #e0e6f0;
+    font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+      Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  /* Monospace for numbers / financial data */
+  .font-mono,
+  .mono,
+  [data-mono] {
+    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas',
+      'Menlo', 'Liberation Mono', monospace;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(0, 212, 255, 0.25);
+    color: #fff;
+  }
+
+  /* Focus ring */
+  :focus-visible {
+    outline: 2px solid #00d4ff;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Links (rare in dashboard but defensive) */
+  a {
+    color: #00d4ff;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  a:hover {
+    color: #66e5ff;
+  }
+}
+
+/* ---- Components Layer ---- */
+@layer components {
+  /* =============================================================
+     Chart Container
+     ============================================================= */
+  .chart-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .chart-container canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* =============================================================
+     Card (standard dashboard panel)
+     ============================================================= */
+  .card {
+    background: rgba(8, 13, 28, 0.92);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    border-color: rgba(0, 212, 255, 0.22);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+  }
+
+  /* =============================================================
+     Glass Panel (more translucent)
+     ============================================================= */
+  .glass-panel {
+    background: rgba(10, 15, 35, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* =============================================================
+     Data Row (hover highlight)
+     ============================================================= */
+  .data-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+    cursor: default;
+  }
+
+  .data-row:hover {
+    background: rgba(0, 212, 255, 0.06);
+  }
+
+  .data-row + .data-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  /* =============================================================
+     Status Badges
+     ============================================================= */
+  .badge-up {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: #00e676;
+    background: rgba(0, 230, 118, 0.1);
+    border: 1px solid rgba(0, 230, 118, 0.2);
+  }
+
+  .badge-down {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: #ff5252;
+    background: rgba(255, 82, 82, 0.1);
+    border: 1px solid rgba(255, 82, 82, 0.2);
+  }
+
+  .badge-warn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: #ffc107;
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.2);
+  }
+
+  /* =============================================================
+     Glow Accent Lines
+     ============================================================= */
+  .glow-top {
+    position: relative;
+  }
+
+  .glow-top::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 12px;
+    right: 12px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.4), transparent);
+  }
+
+  /* =============================================================
+     Pulse Dot (live indicator)
+     ============================================================= */
+  .pulse-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00e676;
+    box-shadow: 0 0 6px #00e676;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.3);
+    }
+  }
+
+  /* =============================================================
+     Divider (subtle)
+     ============================================================= */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  }
+
+  .divider-vertical {
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  }
+
+  /* =============================================================
+     Price Ticker Text
+     ============================================================= */
+  .price-up {
+    color: #00e676;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .price-down {
+    color: #ff5252;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .price-neutral {
+    color: #a0aec0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* ---- Utilities Layer ---- */
+@layer utilities {
+  /* Hide scrollbar but keep function */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Hide scrollbar entirely */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Grid background pattern */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(0, 212, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 212, 255, 0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center center;
+  }
+
+  .bg-grid-sm {
+    background-image:
+      linear-gradient(rgba(0, 212, 255, 0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 212, 255, 0.015) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: center center;
+  }
+
+  /* Noise texture overlay */
+  .bg-noise::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.015;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Gradient text */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #00d4ff 0%, #7b61ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Fade edges for overflowing content */
+  .fade-right {
+    mask-image: linear-gradient(90deg, #000 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent 100%);
+  }
+
+  .fade-bottom {
+    mask-image: linear-gradient(180deg, #000 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent 100%);
+  }
+
+  /* Backdrop blur utility */
+  .backdrop-blur-xs {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .backdrop-blur-md {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .backdrop-blur-lg {
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+}
+
+/* ---- Mobile Breakpoint Overrides ---- */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .card {
+    border-radius: 8px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .glass-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* ---- High-DPI Optimizations ---- */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .bg-grid {
+    background-size: 40px 40px;
+  }
+}
+
+/* ---- Ant Design Table Dark Theme Overrides ---- */
+.aims-table-row td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+.aims-table-row:hover td {
+  background: rgba(0, 212, 255, 0.04) !important;
+}
+
+.aims-index-table .ant-table,
+.aims-lianban-table .ant-table,
+.aims-sector-table .ant-table {
+  background: transparent !important;
+}
+
+.aims-index-table .ant-table-thead > tr > th,
+.aims-lianban-table .ant-table-thead > tr > th,
+.aims-sector-table .ant-table-thead > tr > th {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 12px !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.aims-index-table .ant-table-tbody > tr > td,
+.aims-lianban-table .ant-table-tbody > tr > td,
+.aims-sector-table .ant-table-tbody > tr > td {
+  padding: 8px 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+.aims-index-table .ant-table-tbody > tr:last-child > td,
+.aims-lianban-table .ant-table-tbody > tr:last-child > td,
+.aims-sector-table .ant-table-tbody > tr:last-child > td {
+  border-bottom: none !important;
+}
+
+/* Sorter arrow color */
+.aims-index-table .ant-table-column-sorter,
+.aims-sector-table .ant-table-column-sorter {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.aims-index-table .ant-table-column-sorter-up.active,
+.aims-index-table .ant-table-column-sorter-down.active,
+.aims-sector-table .ant-table-column-sorter-up.active,
+.aims-sector-table .ant-table-column-sorter-down.active {
+  color: #00d4ff !important;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

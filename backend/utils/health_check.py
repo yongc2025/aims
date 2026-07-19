@@ -4,6 +4,11 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
 
 def check_python():
     version = sys.version_info
@@ -22,4 +27,35 @@ def check_environment():
 
 def check_database():
     db_path = Path("storage")
-    try
+    try:
+        db_path.mkdir(parents=True, exist_ok=True)
+        test_file = db_path / ".healthcheck"
+        test_file.write_text("ok", encoding="utf-8")
+        test_file.unlink()
+        return True, str(db_path)
+    except OSError as exc:
+        return False, str(exc)
+
+
+def main():
+    checks = [
+        ("python", check_python()),
+        ("environment", check_environment()),
+        ("database_path", check_database()),
+    ]
+
+    failed = False
+    print("AIMS Health Check")
+    print("=" * 30)
+
+    for name, (ok, detail) in checks:
+        symbol = "OK" if ok else "FAIL"
+        print(f"{symbol} {name}: {detail}")
+        if not ok:
+            failed = True
+
+    raise SystemExit(1 if failed else 0)
+
+
+if __name__ == "__main__":
+    main()

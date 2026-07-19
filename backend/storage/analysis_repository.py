@@ -39,3 +39,30 @@ def get_sentiment_trend():
         }
         for row in rows
     ]
+
+
+def get_sector_heatmap():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT trade_date, sector_name, change_percent, limit_up_count, amount, source
+        FROM sector_daily
+        ORDER BY trade_date DESC, limit_up_count DESC, change_percent DESC
+        LIMIT 20
+        """
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return [
+        {
+            "date": row[0],
+            "name": row[1],
+            "value": row[2],
+            "change_percent": row[2],
+            "limit_up_count": row[3],
+            "amount": row[4],
+            "source": row[5],
+        }
+        for row in rows
+    ]
