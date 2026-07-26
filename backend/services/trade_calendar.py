@@ -77,3 +77,27 @@ def is_trade_day(trade_date: str) -> bool:
         return trade_date in get_trade_dates()
     except Exception:  # noqa: BLE001 - last-resort fallback.
         return datetime.fromisoformat(trade_date).weekday() < 5
+
+
+def previous_trade_date(reference_date: str | None = None) -> str:
+    """Return the nearest trade date before the reference date."""
+    if reference_date is None:
+        reference = datetime.now().date()
+    else:
+        reference = datetime.fromisoformat(reference_date).date()
+
+    try:
+        candidates = [
+            trade_date
+            for trade_date in get_trade_dates()
+            if datetime.fromisoformat(trade_date).date() < reference
+        ]
+        if candidates:
+            return max(candidates)
+    except Exception:
+        pass
+
+    day = reference - timedelta(days=1)
+    while day.weekday() >= 5:
+        day -= timedelta(days=1)
+    return day.isoformat()

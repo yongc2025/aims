@@ -23,7 +23,7 @@ interface SectorTop5Props {
   date?: string;
 }
 
-export default function SectorTop5({ data = [], date = '2026-07-17' }: SectorTop5Props) {
+export default function SectorTop5({ data = [], date = '' }: SectorTop5Props) {
   const tableData = data;
   const columns: ColumnsType<SectorRow> = useMemo(
     () => [

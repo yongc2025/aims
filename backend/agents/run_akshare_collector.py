@@ -2,19 +2,47 @@
 
 import argparse
 import json
+import logging
+import os
 from datetime import datetime
 
 from backend.data_sources.akshare_provider import AkShareMarketDataProvider
 from backend.services.trade_calendar import is_trade_day
 from backend.storage.database import init_database
 from backend.storage.markdown import generate_markdown
-from backend.storage.repository import save_market_report
+from backend.storage.repository import finish_sync_run, save_market_report, start_sync_run
+
+logger = logging.getLogger(__name__)
 
 
-def collect_market_data(trade_date: str) -> dict:
+def collect_market_data(trade_date: str, *, preserve_realtime_snapshot: bool = False) -> dict:
+    # Only configure logging if the root logger has no handlers yet (e.g. CLI mode).
+    # When running via the API, main.py already sets up the FileHandler with UTF-8.
+    if not logging.getLogger().hasHandlers():
+        log_file = os.environ.get("AIMS_LOG_FILE")
+        if log_file:
+            handler = logging.FileHandler(log_file, encoding="utf-8", mode="a")
+            handler.setFormatter(logging.Formatter(
+                fmt="%(asctime)s [%(levelname)s] %(message)s",
+                datefmt="%H:%M:%S",
+            ))
+            logging.basicConfig(level=logging.INFO, handlers=[handler], force=True)
+        else:
+            logging.basicConfig(
+                level=logging.INFO,
+                format="%(asctime)s [%(levelname)s] %(message)s",
+                datefmt="%H:%M:%S",
+                force=True,
+            )
+    logger.info("[数据采集器] %s | === 开始数据采集 ===", trade_date)
     init_database()
+    logger.info("[数据采集器] %s | init_database | ✅ 数据库已初始化", trade_date)
+    sync_run_id = start_sync_run(trade_date)
+    logger.info("[数据采集器] %s | start_sync_run | ✅ 同步任务ID=%s", trade_date, sync_run_id)
+
     if not is_trade_day(trade_date):
-        return {
+        logger.info("[数据采集器] %s | is_trade_day | ⏭️ 非交易日，跳过", trade_date)
+        data = {
             "schema_version": "1.0",
             "date": trade_date,
             "skipped": True,
@@ -23,12 +51,43 @@ def collect_market_data(trade_date: str) -> dict:
             "sources": ["akshare.tool_trade_date_hist_sina"],
             "source_errors": [],
         }
+        finish_sync_run(sync_run_id, "skipped", build_summary(data))
+        data["sync_run_id"] = sync_run_id
+        return data
 
-    provider = AkShareMarketDataProvider()
-    data = provider.collect(trade_date)
-    markdown = generate_markdown(data)
-    save_market_report(data, markdown)
-    return data
+    try:
+        logger.info("[数据采集器] %s | AkShareMarketDataProvider.collect | 🚀 开始调用...", trade_date)
+        provider = AkShareMarketDataProvider()
+        data = provider.collect(trade_date)
+        logger.info("[数据采集器] %s | AkShareMarketDataProvider.collect | ✅ 数据采集完成", trade_date)
+
+        logger.info("[数据采集器] %s | generate_markdown | 📝 生成Markdown报告...", trade_date)
+        markdown = generate_markdown(data)
+
+        logger.info("[数据采集器] %s | save_market_report | 💾 保存到数据库...", trade_date)
+        data = save_market_report(
+            data,
+            markdown,
+            sync_run_id=sync_run_id,
+            preserve_realtime_snapshot=preserve_realtime_snapshot,
+        )
+        data["sync_run_id"] = sync_run_id
+        logger.info("[数据采集器] %s | save_market_report | ✅ 数据库保存完成", trade_date)
+
+        summary = build_summary(data)
+        logger.info("[数据采集器] %s | finish_sync_run | ✅ 同步成功", trade_date)
+        finish_sync_run(sync_run_id, "success", summary)
+        logger.info("[数据采集器] %s | === 同步流程完全结束 === | 🎉", trade_date)
+        return data
+    except Exception as exc:
+        logger.error("[数据采集器] %s | collect_market_data | ❌ 同步失败: %s", trade_date, exc, exc_info=True)
+        finish_sync_run(
+            sync_run_id,
+            "failed",
+            {"date": trade_date},
+            f"{type(exc).__name__}: {exc}",
+        )
+        raise
 
 
 def build_summary(data: dict) -> dict:
@@ -46,6 +105,7 @@ def build_summary(data: dict) -> dict:
     sectors = data.get("sectors") or []
     indices = data.get("indices") or []
     news = data.get("news") or []
+    stock_snapshot = data.get("stock_snapshot") or []
     stats = data.get("market_statistics") or {}
 
     def compact_errors(errors: list[dict]) -> list[dict]:
@@ -88,6 +148,7 @@ def build_summary(data: dict) -> dict:
             "limit_down_count": stats.get("limit_down_count"),
         },
         "limit_chain_count": len(data.get("limit_chain_stocks") or []),
+        "stock_snapshot_count": len(stock_snapshot),
         "sector_count": len(sectors),
         "sector_top5": [
             {
@@ -118,6 +179,12 @@ def build_summary(data: dict) -> dict:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "date",
@@ -134,4 +201,6 @@ if __name__ == "__main__":
 
     result = collect_market_data(args.date)
     output = result if args.full else build_summary(result)
+    print()
+    print("=" * 60)
     print(json.dumps(output, ensure_ascii=False, indent=2))

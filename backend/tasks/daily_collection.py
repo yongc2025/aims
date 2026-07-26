@@ -2,17 +2,17 @@
 
 from datetime import date
 
+from backend.agents.run_akshare_collector import build_summary, collect_market_data
 
-def run_daily_collection(trade_date: date):
-    """Execute daily collection workflow.
 
-    Workflow placeholder:
-    1. Run collector agent
-    2. Validate output
-    3. Save JSON
-    4. Generate markdown
-    """
-    return {
-        "date": trade_date.isoformat(),
-        "status": "pending_agent_execution",
-    }
+def run_daily_collection(
+    trade_date: date,
+    *,
+    preserve_realtime_snapshot: bool = False,
+) -> dict:
+    """Execute the daily collection workflow."""
+    data = collect_market_data(
+        trade_date.isoformat(),
+        preserve_realtime_snapshot=preserve_realtime_snapshot,
+    )
+    return build_summary(data)

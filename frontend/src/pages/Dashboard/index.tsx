@@ -11,8 +11,17 @@ import { type DashboardData, getDashboardData, getDashboardDataByDate, syncMarke
 
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000;
 
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const defaultTradeDate = formatLocalDate(new Date());
+
 const fallbackDashboard: DashboardData = {
-  date: '2026-07-17',
+  date: defaultTradeDate,
   temperature: '--',
   turnover: '--',
   limitUp: '--',
@@ -43,6 +52,7 @@ export default function Dashboard() {
   const [reloadNonce, setReloadNonce] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const lastSyncAtRef = useRef(0);
+  const visibleDate = pendingDate || selectedDate || dashboard.date;
 
   useEffect(() => {
     let cancelled = false;
@@ -105,8 +115,8 @@ export default function Dashboard() {
 
     const data = await getDashboardDataByDate(fallbackDashboard, targetDate);
     setDashboard(data);
-    setSelectedDate(data.date);
-    setPendingDate(data.date);
+    setSelectedDate(targetDate);
+    setPendingDate(targetDate);
     showNotice(data.usingFallback ? `${targetDate} 暂无数据` : `${data.date} 同步完成`, 2600);
 
     setSyncing(false);
@@ -127,8 +137,8 @@ export default function Dashboard() {
     const data = await getDashboardDataByDate(fallbackDashboard, date);
 
     setDashboard(data);
-    setSelectedDate(data.date);
-    setPendingDate(data.date);
+    setSelectedDate(date);
+    setPendingDate(date);
     setLoading(false);
     if (data.usingFallback) {
       showNotice(`${date} 暂无数据，可点击手工同步`);
@@ -149,7 +159,7 @@ export default function Dashboard() {
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1800px] flex-col gap-4 px-4 py-4 sm:px-5 lg:px-6">
         <Header
           selectedDate={pendingDate}
-          dataDate={dashboard.date}
+          dataDate={visibleDate}
           usingFallback={dashboard.usingFallback}
           loading={loading}
           syncing={syncing}
@@ -175,19 +185,19 @@ export default function Dashboard() {
           <KPICard
             label="成交额"
             value={dashboard.turnover}
-            sub={dashboard.usingFallback ? '暂无数据' : dashboard.date}
+            sub={dashboard.usingFallback ? '暂无数据' : visibleDate}
             statusColor="#00D4FF"
           />
           <KPICard
             label="涨停"
             value={dashboard.limitUp}
-            sub={dashboard.usingFallback ? '暂无数据' : dashboard.date}
+            sub={dashboard.usingFallback ? '暂无数据' : visibleDate}
             statusColor="#00E676"
           />
           <KPICard
             label="跌停"
             value={dashboard.limitDown}
-            sub={dashboard.usingFallback ? '暂无数据' : dashboard.date}
+            sub={dashboard.usingFallback ? '暂无数据' : visibleDate}
             statusColor="#FF5252"
           />
         </motion.section>
@@ -198,7 +208,7 @@ export default function Dashboard() {
           transition={{ delay: 0.18, duration: 0.35 }}
           className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.35fr)]"
         >
-          <IndexTable data={dashboard.indexRows} date={dashboard.date} />
+          <IndexTable data={dashboard.indexRows} date={visibleDate} />
           <LianBanTable data={dashboard.lianBanRows} />
         </motion.section>
 
@@ -208,7 +218,7 @@ export default function Dashboard() {
           transition={{ delay: 0.26, duration: 0.35 }}
           className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.35fr)]"
         >
-          <SectorTop5 data={dashboard.sectorRows} date={dashboard.date} />
+          <SectorTop5 data={dashboard.sectorRows} date={visibleDate} />
           <MarginChart data={dashboard.marginTrend} />
         </motion.section>
 

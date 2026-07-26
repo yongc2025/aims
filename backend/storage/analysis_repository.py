@@ -3,12 +3,23 @@
 from .database import get_connection
 
 
-def get_margin_trend():
+def get_margin_trend(end_date: str | None = None):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT week_date, margin_balance FROM margin_balance_weekly ORDER BY week_date"
-    )
+    if end_date:
+        cursor.execute(
+            """
+            SELECT week_date, margin_balance
+            FROM margin_balance_weekly
+            WHERE week_date <= ?
+            ORDER BY week_date
+            """,
+            (end_date,),
+        )
+    else:
+        cursor.execute(
+            "SELECT week_date, margin_balance FROM margin_balance_weekly ORDER BY week_date"
+        )
     rows = cursor.fetchall()
     conn.close()
     return [
@@ -17,16 +28,27 @@ def get_margin_trend():
     ]
 
 
-def get_sentiment_trend():
+def get_sentiment_trend(end_date: str | None = None):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT trade_date, up_count, down_count, limit_up_count, limit_down_count
-        FROM market_sentiment_daily
-        ORDER BY trade_date
-        """
-    )
+    if end_date:
+        cursor.execute(
+            """
+            SELECT trade_date, up_count, down_count, limit_up_count, limit_down_count
+            FROM market_sentiment_daily
+            WHERE trade_date <= ?
+            ORDER BY trade_date
+            """,
+            (end_date,),
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT trade_date, up_count, down_count, limit_up_count, limit_down_count
+            FROM market_sentiment_daily
+            ORDER BY trade_date
+            """
+        )
     rows = cursor.fetchall()
     conn.close()
     return [
@@ -41,17 +63,29 @@ def get_sentiment_trend():
     ]
 
 
-def get_sector_heatmap():
+def get_sector_heatmap(trade_date: str | None = None):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT trade_date, sector_name, change_percent, limit_up_count, amount, source
-        FROM sector_daily
-        ORDER BY trade_date DESC, limit_up_count DESC, change_percent DESC
-        LIMIT 20
-        """
-    )
+    if trade_date:
+        cursor.execute(
+            """
+            SELECT trade_date, sector_name, change_percent, limit_up_count, amount, source
+            FROM sector_daily
+            WHERE trade_date = ?
+            ORDER BY limit_up_count DESC, change_percent DESC
+            LIMIT 20
+            """,
+            (trade_date,),
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT trade_date, sector_name, change_percent, limit_up_count, amount, source
+            FROM sector_daily
+            ORDER BY trade_date DESC, limit_up_count DESC, change_percent DESC
+            LIMIT 20
+            """
+        )
     rows = cursor.fetchall()
     conn.close()
     return [

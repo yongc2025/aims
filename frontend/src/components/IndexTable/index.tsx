@@ -17,7 +17,7 @@ interface IndexTableProps {
   date?: string;
 }
 
-export default function IndexTable({ data = [], date = '2026-07-17' }: IndexTableProps) {
+export default function IndexTable({ data = [], date = '' }: IndexTableProps) {
   const tableData = data;
   const columns: ColumnsType<IndexRow> = useMemo(
     () => [

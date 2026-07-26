@@ -3,6 +3,6 @@
 from backend.storage.analysis_repository import get_sentiment_trend as query_sentiment_trend
 
 
-def get_sentiment_trend():
+def get_sentiment_trend(end_date: str | None = None):
     """Return market sentiment time series from storage."""
-    return query_sentiment_trend()
+    return query_sentiment_trend(end_date)

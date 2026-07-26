@@ -43,6 +43,12 @@ class LimitChainStock(BaseModel):
     stock_code: str
     stock_name: str
     chain_days: Optional[int] = None
+    change_pct: Optional[float] = None
+    amount: Optional[float] = None
+    free_float_market_cap: Optional[float] = None
+    total_market_cap: Optional[float] = None
+    turnover_rate: Optional[float] = None
+    seal_amount: Optional[float] = None
     detail: Optional[str] = None
     industry: Optional[str] = None
     reason: Optional[str] = None
@@ -74,7 +80,9 @@ class MarketDailySchema(BaseModel):
     index_data: List[IndexData] = Field(default_factory=list)
     market_statistics: Optional[MarketStatistics] = None
     limit_chain_stocks: List[LimitChainStock] = Field(default_factory=list)
+    stock_snapshot: List[dict] = Field(default_factory=list)
     sectors: List[SectorData] = Field(default_factory=list)
+    concept_fund_flow: List[dict] = Field(default_factory=list)
     margin_balance: List[MarginBalance] = Field(default_factory=list)
     news: List[NewsEvent] = Field(default_factory=list)
     sources: List[str] = Field(default_factory=list)

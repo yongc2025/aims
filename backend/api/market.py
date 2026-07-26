@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from backend.agents.run_akshare_collector import build_summary, collect_market_data
 from backend.api.market_service import query_latest_market, query_market_by_date
 from backend.services.trade_calendar import is_trade_day
+from backend.storage.repository import get_latest_sync_run, get_raw_source_snapshots
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
@@ -59,7 +60,20 @@ def sync_market(request: MarketSyncRequest):
         "ok": True,
         "date": trade_date,
         "summary": build_summary(data),
+        "syncRun": get_latest_sync_run(trade_date),
     }
+
+
+@router.get("/sync-runs/latest")
+def get_latest_sync_run_api():
+    """Get latest sync run status."""
+    return get_latest_sync_run()
+
+
+@router.get("/sync-runs/{trade_date}/sources")
+def get_sync_sources(trade_date: date):
+    """Get source capture status for a trade date."""
+    return get_raw_source_snapshots(trade_date.isoformat())
 
 
 @router.get("/{trade_date}")

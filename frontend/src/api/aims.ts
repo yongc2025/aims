@@ -293,18 +293,22 @@ export async function syncMarket(date: string): Promise<MarketSyncResponse | nul
   }
 }
 
-export async function getMarginTrend(): Promise<ChartPoint[]> {
-  const rows = await requestJson<unknown[]>(`${API_BASE}/analysis/margin`, []);
+function dateQuery(date?: string): string {
+  return date ? `?date=${encodeURIComponent(date)}` : '';
+}
+
+export async function getMarginTrend(date?: string): Promise<ChartPoint[]> {
+  const rows = await requestJson<unknown[]>(`${API_BASE}/analysis/margin${dateQuery(date)}`, []);
   return rows.map(chartPointFromItem).filter(Boolean) as ChartPoint[];
 }
 
-export async function getSentimentTrend(): Promise<ChartPoint[]> {
-  const rows = await requestJson<unknown[]>(`${API_BASE}/analysis/sentiment`, []);
+export async function getSentimentTrend(date?: string): Promise<ChartPoint[]> {
+  const rows = await requestJson<unknown[]>(`${API_BASE}/analysis/sentiment${dateQuery(date)}`, []);
   return rows.map(chartPointFromItem).filter(Boolean) as ChartPoint[];
 }
 
-export async function getSectorTrend(): Promise<unknown[]> {
-  return requestJson<unknown[]>(`${API_BASE}/analysis/sectors`, []);
+export async function getSectorTrend(date?: string): Promise<unknown[]> {
+  return requestJson<unknown[]>(`${API_BASE}/analysis/sectors${dateQuery(date)}`, []);
 }
 
 function buildDashboardData(
@@ -339,9 +343,9 @@ export async function getDashboardData(
 ): Promise<DashboardData> {
   const [marketResponse, marginTrend, sentimentTrend, sectorTrend] = await Promise.all([
     date ? getMarket(date) : getLatestMarket(),
-    getMarginTrend(),
-    getSentimentTrend(),
-    getSectorTrend(),
+    getMarginTrend(date),
+    getSentimentTrend(date),
+    getSectorTrend(date),
   ]);
 
   const data = asRecord(marketResponse?.data);
@@ -366,9 +370,9 @@ export async function getDashboardDataByDate(
 ): Promise<DashboardData> {
   const [marketResponse, marginTrend, sentimentTrend, sectorTrend] = await Promise.all([
     getMarket(date),
-    getMarginTrend(),
-    getSentimentTrend(),
-    getSectorTrend(),
+    getMarginTrend(date),
+    getSentimentTrend(date),
+    getSectorTrend(date),
   ]);
 
   if (!marketResponse?.data) {

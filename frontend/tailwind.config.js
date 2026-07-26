@@ -13,6 +13,8 @@ export default {
           down: '#FF5252',
           warn: '#FFC107',
           amber: '#FFB454',
+          rise: '#FF5252',
+          fall: '#00E676',
         },
       },
       fontFamily: {

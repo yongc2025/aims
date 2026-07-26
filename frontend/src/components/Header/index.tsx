@@ -22,6 +22,7 @@ interface HeaderProps {
   onDateChange: (date: string) => void;
   onRefresh: () => void;
   onSync: () => void;
+  activePage?: 'dashboard' | 'plan2030';
 }
 
 export default function Header({
@@ -35,6 +36,7 @@ export default function Header({
   onDateChange,
   onRefresh,
   onSync,
+  activePage = 'dashboard',
 }: HeaderProps) {
   const timestamp = useMemo(() => formatTimestamp(), []);
   const statusText = usingFallback ? 'NO DATA' : 'LIVE';
@@ -59,6 +61,28 @@ export default function Header({
             <span className="font-mono tabular-nums">Data {dataDate}</span>
           </div>
         </div>
+        <nav className="flex shrink-0 items-center gap-1 rounded border border-aims-border bg-aims-card p-1">
+          <a
+            href="#/"
+            className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+              activePage === 'dashboard'
+                ? 'bg-aims-primary/15 text-aims-primary'
+                : 'text-white/50 hover:text-white/80'
+            }`}
+          >
+            每日复盘
+          </a>
+          <a
+            href="#/plan-2030"
+            className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+              activePage === 'plan2030'
+                ? 'bg-aims-primary/15 text-aims-primary'
+                : 'text-white/50 hover:text-white/80'
+            }`}
+          >
+            十五五规划
+          </a>
+        </nav>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

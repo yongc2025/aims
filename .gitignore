@@ -220,3 +220,4 @@ __marimo__/
 .history/
 .vscode/
 frontend/node_modules/
+storage/aims.db

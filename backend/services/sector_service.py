@@ -3,6 +3,6 @@
 from backend.storage.analysis_repository import get_sector_heatmap as query_sector_heatmap
 
 
-def get_sector_heatmap():
+def get_sector_heatmap(trade_date: str | None = None):
     """Return sector heatmap data from storage."""
-    return query_sector_heatmap()
+    return query_sector_heatmap(trade_date)
