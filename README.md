@@ -175,13 +175,16 @@ npm run build
 - Ubuntu 22.04 LTS 或更新版本
 - Python 3.11+
 - Git
+- （可选）已安装 Miniconda / Anaconda
 
 ### 1. 安装系统依赖
 
 ```bash
 sudo apt update
-sudo apt install -y python3 python3-venv python3-pip git
+sudo apt install -y git
 ```
+
+> 如果还未安装 conda，可参考 [Miniconda 官方文档](https://docs.conda.io/projects/miniconda/en/latest/) 安装，或使用系统 Python 3.11+ 配合 venv。
 
 ### 2. 克隆项目并配置
 
@@ -192,7 +195,17 @@ cp .env.example .env
 vi .env   # 编辑环境变量，填入你的 API Key
 ```
 
-### 3. 创建虚拟环境并安装依赖
+### 3. 创建 Python 环境并安装依赖
+
+**方式 A：使用 conda（推荐，你的服务器已有 conda 环境 `py3127`）**
+
+```bash
+# 直接激活你已有的 py3127 环境
+conda activate py3127
+pip install -r requirements.txt
+```
+
+**方式 B：使用 venv（备选）**
 
 ```bash
 python3 -m venv .venv
@@ -227,7 +240,14 @@ chmod +x start.sh stop.sh scripts/linux/*.sh
 
 ```bash
 sudo cp scripts/linux/aims.service /etc/systemd/system/
-sudo vi /etc/systemd/system/aims.service   # 修改 User 和 API Key 等配置
+sudo vi /etc/systemd/system/aims.service   # 修改 User、API Key、Python 路径等配置
+```
+
+> **重要**：编辑 `aims.service` 时，请根据你的环境选择 Python 路径：
+> - **conda 用户**（推荐，你已有 `py3127` 环境）：注释掉 Option B，取消注释 Option A，并将路径改为你的 conda python 路径。用 `conda run -n py3127 which python` 查看实际路径，通常是 `/home/你的用户名/miniconda3/envs/py3127/bin/python`
+> - **venv 用户**：保持 Option B 不变即可
+
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable aims
 sudo systemctl start aims

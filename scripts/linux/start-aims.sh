@@ -44,15 +44,44 @@ if port_in_use "$PORT"; then
 fi
 
 # --- Find Python ---
+# Priority: conda active env > conda 'py3127' env > .venv > system python
 PYTHON=""
-if [ -f "$ROOT/.venv/bin/python" ]; then
+
+# 1. Check if we're already inside an active conda environment
+if [ -n "${CONDA_PREFIX:-}" ] && [ -x "$CONDA_PREFIX/bin/python" ]; then
+    PYTHON="$CONDA_PREFIX/bin/python"
+    echo "Using active conda environment: $CONDA_PREFIX"
+fi
+
+# 2. Check for a conda environment named 'py3127' (or 'aims' as fallback)
+if [ -z "$PYTHON" ] && command -v conda &>/dev/null; then
+    for ENV_NAME in py3127 aims; do
+        CONDAPY="$(conda run -n "$ENV_NAME" which python 2>/dev/null || echo "")"
+        if [ -n "$CONDAPY" ] && [ -x "$CONDAPY" ]; then
+            PYTHON="$CONDAPY"
+            echo "Using conda environment: $ENV_NAME"
+            break
+        fi
+    done
+fi
+
+# 3. Check for .venv (venv / virtualenv)
+if [ -z "$PYTHON" ] && [ -f "$ROOT/.venv/bin/python" ]; then
     PYTHON="$ROOT/.venv/bin/python"
-elif command -v python3 &>/dev/null; then
-    PYTHON="$(command -v python3)"
-elif command -v python &>/dev/null; then
-    PYTHON="$(command -v python)"
-else
-    echo "Python 3.11+ was not found. Please install it or create a .venv."
+    echo "Using .venv: $ROOT/.venv"
+fi
+
+# 4. Fallback to system Python
+if [ -z "$PYTHON" ]; then
+    if command -v python3 &>/dev/null; then
+        PYTHON="$(command -v python3)"
+    elif command -v python &>/dev/null; then
+        PYTHON="$(command -v python)"
+    fi
+fi
+
+if [ -z "$PYTHON" ]; then
+    echo "Python 3.11+ was not found. Please install conda env, create .venv, or install system Python."
     exit 1
 fi
 

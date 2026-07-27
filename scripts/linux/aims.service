@@ -27,8 +27,18 @@ Environment=http_proxy=
 Environment=https_proxy=
 Environment=all_proxy=
 
-# Exec
-ExecStart=/opt/aims/.venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+# ──────────────────────────────────────────────
+# Python executable — choose ONE of the options:
+# ──────────────────────────────────────────────
+
+# Option A: conda environment (recommended — you have py3127)
+# Find your conda env path with: conda run -n py3127 which python
+# Typically: /home/ubuntu/miniconda3/envs/py3127/bin/python
+# ExecStart=/home/ubuntu/miniconda3/envs/py3127/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+
+# Option B: .venv (venv / virtualenv)
+# ExecStart=/opt/aims/.venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+
 ExecReload=/bin/kill -HUP $MAINPID
 
 # Logging
