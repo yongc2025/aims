@@ -16,8 +16,8 @@ Environment=OPENCODE_BASE_URL=https://api.deepseek.com/v1
 Environment=OPENCODE_API_KEY=<YOUR_API_KEY>
 Environment=OPENCODE_MODEL=deepseek-v4-flash
 Environment=DATABASE_URL=sqlite:///storage/aims.db
-Environment=API_HOST=0.0.0.0
-Environment=API_PORT=8000
+Environment=API_HOST=127.0.0.1
+Environment=API_PORT=18765
 
 # Clear proxy for Chinese financial APIs
 Environment=HTTP_PROXY=
@@ -34,10 +34,10 @@ Environment=all_proxy=
 # Option A: conda environment (recommended — you have py3127)
 # Find your conda env path with: conda run -n py3127 which python
 # Typically: /home/ubuntu/miniconda3/envs/py3127/bin/python
-# ExecStart=/home/ubuntu/miniconda3/envs/py3127/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+ExecStart=/home/ubuntu/miniconda3/envs/py3127/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 18765
 
 # Option B: .venv (venv / virtualenv)
-# ExecStart=/opt/aims/.venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+# ExecStart=/opt/aims/.venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 18765
 
 ExecReload=/bin/kill -HUP $MAINPID
 

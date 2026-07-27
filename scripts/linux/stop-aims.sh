@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PID_FILE="$ROOT/runtime/aims.pid"
-PORTS=(8000)
+PORTS=(18765)
 STOPPED=false
 
 echo "Searching for AIMS processes..."

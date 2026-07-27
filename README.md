@@ -232,8 +232,8 @@ chmod +x start.sh stop.sh scripts/linux/*.sh
 # 停止
 ./stop.sh
 
-# 指定端口启动
-./start.sh 8080
+# 指定其他端口启动
+./start.sh 18766
 ```
 
 ### 6. 使用 systemd 开机自启（生产环境推荐）
@@ -243,9 +243,10 @@ sudo cp scripts/linux/aims.service /etc/systemd/system/
 sudo vi /etc/systemd/system/aims.service   # 修改 User、API Key、Python 路径等配置
 ```
 
-> **重要**：编辑 `aims.service` 时，请根据你的环境选择 Python 路径：
-> - **conda 用户**（推荐，你已有 `py3127` 环境）：注释掉 Option B，取消注释 Option A，并将路径改为你的 conda python 路径。用 `conda run -n py3127 which python` 查看实际路径，通常是 `/home/你的用户名/miniconda3/envs/py3127/bin/python`
-> - **venv 用户**：保持 Option B 不变即可
+> **重要**：`aims.service` 默认已启用 conda 路径（Option A），你只需要：
+> 1. 用 `conda run -n py3127 which python` 查看你的 conda python 实际路径
+> 2. 将 `ExecStart=` 行中的路径改为实际的 conda python 路径（通常是 `/home/你的用户名/miniconda3/envs/py3127/bin/python`）
+> 3. 如果你用的是 venv 而非 conda，则注释掉 Option A，取消注释 Option B
 
 ```bash
 sudo systemctl daemon-reload
@@ -267,30 +268,118 @@ npm install
 npm run build
 ```
 
-前端构建产物会输出到 `frontend/dist/`，后端 FastAPI 会自动托管静态文件。访问 `http://<服务器IP>:8000/` 即可看到仪表盘。
+前端构建产物会输出到 `frontend/dist/`，后端 FastAPI 会自动托管静态文件。
+
+> **安全注意**：AIMS 默认监听 `127.0.0.1:18765`（仅本地），外部访问需要通过 Nginx 反向代理 + HTTPS。详见下一步。
 
 ### 8. 防火墙配置
 
+如果直接暴露 AIMS 到公网（不推荐），放开内部端口：
+
 ```bash
-# 如果使用 ufw
-sudo ufw allow 8000/tcp
+sudo ufw allow 18765/tcp
+```
+
+如果使用 Nginx 反向代理（推荐，见下一步），只需要放行 HTTP/HTTPS：
+
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
 sudo ufw reload
+```
+
+### 9. 配置 Nginx 反向代理 + HTTPS（安全上线）
+
+> **为什么需要这一步？**
+> - AIMS 本身没有认证，任何人访问端口就能看到数据
+> - 端口 `18765` 绑定在 `127.0.0.1`（仅本地），外部无法直连
+> - Nginx 作为前置网关，提供 **HTTPS 加密**、**基础认证**、**防扫描**
+
+#### 9.1 安装 Nginx
+
+```bash
+sudo apt update
+sudo apt install -y nginx apache2-utils
+```
+
+#### 9.2 申请 SSL 证书（Let's Encrypt）
+
+```bash
+# 安装 certbot
+sudo apt install -y certbot python3-certbot-nginx
+
+# 申请证书（替换 your-domain.com 为你的域名）
+sudo certbot --nginx -d your-domain.com
+```
+
+> 如果没有域名，可以使用服务器 IP + 自签名证书，或先跳过 HTTPS 直接用 HTTP（不推荐用于生产）。
+
+#### 9.3 配置 Nginx
+
+项目已提供 Nginx 配置模板：
+
+```bash
+sudo cp scripts/linux/aims-nginx.conf /etc/nginx/sites-available/aims
+sudo vi /etc/nginx/sites-available/aims
+```
+
+> **编辑要点**：
+> - 将 `server_name` 改为你的域名（或服务器 IP）
+> - 如果跳过 HTTPS，删除第一个 `server` 块和第二个 `server` 块中的 SSL 相关行
+
+#### 9.4 启用基础认证（推荐）
+
+```bash
+# 创建用户（替换 aims 为你的用户名）
+sudo htpasswd -c /etc/nginx/.htpasswd aims
+# 会提示输入密码
+
+# 在 aims-nginx.conf 中取消注释以下三行：
+# auth_basic           "AIMS - 请输入用户名密码";
+# auth_basic_user_file /etc/nginx/.htpasswd;
+```
+
+#### 9.5 启用站点并重载
+
+```bash
+sudo ln -s /etc/nginx/sites-available/aims /etc/nginx/sites-enabled/
+sudo nginx -t          # 测试配置
+sudo systemctl reload nginx
+```
+
+#### 9.6 访问
+
+```text
+https://your-domain.com/          → AIMS 仪表盘（带 HTTPS + 认证）
+https://your-domain.com/api/...   → API 接口
+```
+
+完成后，你的架构是：
+
+```text
+用户 ── HTTPS :443 ──→ Nginx（认证） ── HTTP :18765 ──→ AIMS/FastAPI
+                                                            │
+                                                    SQLite / 东方财富 API / ...
 ```
 
 ### 目录结构说明
 
 ```text
 /opt/aims/
-├── backend/         FastAPI 后端
-├── frontend/        React 前端
-├── storage/         SQLite 数据库目录
-├── logs/            运行日志
-├── runtime/         PID 文件
+├── backend/              FastAPI 后端
+├── frontend/             React 前端
+├── storage/              SQLite 数据库目录
+├── logs/                 运行日志
+├── runtime/              PID 文件
 ├── scripts/
-│   ├── linux/       Linux 启动/停止脚本
-│   └── windows/     Windows 启动/停止脚本
-├── start.sh         Linux 启动入口
-└── stop.sh          Linux 停止入口
+│   ├── linux/
+│   │   ├── start-aims.sh    Linux 启动脚本 (端口 18765, 绑定 127.0.0.1)
+│   │   ├── stop-aims.sh     Linux 停止脚本
+│   │   ├── aims.service     systemd 服务单元
+│   │   └── aims-nginx.conf  Nginx 反向代理配置模板
+│   └── windows/          Windows 启动/停止脚本
+├── start.sh              Linux 启动入口
+└── stop.sh               Linux 停止入口
 ```
 
 ## API 概览

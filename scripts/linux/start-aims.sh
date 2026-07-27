@@ -2,7 +2,7 @@
 # AIMS startup script for Ubuntu/Linux
 set -euo pipefail
 
-PORT="${1:-8000}"
+PORT="${1:-18765}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 RUNTIME_DIR="$ROOT/runtime"
 LOGS_DIR="$ROOT/logs"
@@ -107,7 +107,7 @@ echo "Starting AIMS on port $PORT..."
 cd "$ROOT"
 
 nohup "$PYTHON" -m uvicorn backend.main:app \
-    --host 0.0.0.0 \
+    --host 127.0.0.1 \
     --port "$PORT" \
     >> "$STDOUT_LOG" 2>> "$STDERR_LOG" &
 
@@ -118,7 +118,7 @@ echo "$AIMS_PID" > "$PID_FILE"
 sleep 2
 if kill -0 "$AIMS_PID" 2>/dev/null; then
     echo "AIMS started successfully (PID $AIMS_PID)."
-    echo "Visit http://<server-ip>:$PORT/"
+    echo "Internal (localhost only): http://127.0.0.1:$PORT/"
     echo "Logs: $LOGS_DIR"
 else
     echo "AIMS failed to start. Check logs: $STDERR_LOG"
