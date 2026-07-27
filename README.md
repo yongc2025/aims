@@ -189,8 +189,8 @@ sudo apt install -y git
 ### 2. 克隆项目并配置
 
 ```bash
-git clone <你的仓库地址> /opt/aims
-cd /opt/aims
+git clone <你的仓库地址> /home/ubuntu/projects/aims
+cd /home/ubuntu/projects/aims
 cp .env.example .env
 vi .env   # 编辑环境变量，填入你的 API Key
 ```
@@ -240,7 +240,7 @@ chmod +x start.sh stop.sh scripts/linux/*.sh
 
 ```bash
 sudo cp scripts/linux/aims.service /etc/systemd/system/
-sudo vi /etc/systemd/system/aims.service   # 修改 User、API Key、Python 路径等配置
+sudo vi /etc/systemd/system/aims.service   # 确认 WorkingDirectory 和日志路径正确
 ```
 
 > **重要**：`aims.service` 默认已启用 conda 路径（Option A），你只需要：
@@ -308,8 +308,7 @@ sudo apt install -y nginx apache2-utils
 # 安装 certbot
 sudo apt install -y certbot python3-certbot-nginx
 
-# 申请证书（替换 your-domain.com 为你的域名）
-sudo certbot --nginx -d your-domain.com
+sudo certbot --nginx -d yongc20.top
 ```
 
 > 如果没有域名，可以使用服务器 IP + 自签名证书，或先跳过 HTTPS 直接用 HTTP（不推荐用于生产）。
@@ -350,8 +349,8 @@ sudo systemctl reload nginx
 #### 9.6 访问
 
 ```text
-https://your-domain.com/          → AIMS 仪表盘（带 HTTPS + 认证）
-https://your-domain.com/api/...   → API 接口
+https://yongc20.top/               → AIMS 仪表盘（带 HTTPS + 认证）
+https://yongc20.top/api/...        → API 接口
 ```
 
 完成后，你的架构是：
@@ -362,10 +361,63 @@ https://your-domain.com/api/...   → API 接口
                                                     SQLite / 东方财富 API / ...
 ```
 
+### 10. 日志管理
+
+AIMS 涉及三类日志，各有不同的轮替策略：
+
+| 日志文件 | 来源 | 轮替方式 |
+|---------|------|---------|
+| `logs/aims.log` | Python 应用日志 | **RotatingFileHandler** — 每个文件 10MB，保留 5 个备份，自动轮替 |
+| 标准输出/错误 | uvicorn 控制台日志 | **取决于启动方式**（见下方） |
+| Nginx 日志 | `/var/log/nginx/` | Nginx 自带 logrotate，无需额外配置 |
+
+#### systemd 模式（推荐，生产环境）
+
+`aims.service` 已将 `StandardOutput/Error` 设为 `journal`，日志由 **systemd-journald** 管理：
+
+```bash
+# 查看实时日志
+sudo journalctl -u aims -f
+
+# 查看最近 1 小时的日志
+sudo journalctl -u aims --since "1 hour ago"
+
+# 查看今天的日志
+sudo journalctl -u aims --since today
+
+# journald 日志自动轮替（默认限制日志总大小，不会无限增长）
+# 配置在 /etc/systemd/journald.conf 中的 SystemMaxUse=
+```
+
+#### 脚本启动模式（`./start.sh`）
+
+如果直接用 `start.sh` 启动（非 systemd），日志写入 `logs/aims.stdout.log` 和 `logs/aims.stderr.log`，需要配合 **logrotate**：
+
+```bash
+# 安装 logrotate 配置（项目已提供）
+sudo cp scripts/linux/logrotate-aims.conf /etc/logrotate.d/aims
+
+# 测试配置
+sudo logrotate -d /etc/logrotate.d/aims
+
+# logrotate 会自动每天（或文件超过 10MB 时）轮替，
+# 保留 14 天，压缩旧日志
+```
+
+#### 日志文件大小控制
+
+Python 应用日志（`aims.log`）的轮替参数可通过环境变量调整：
+
+```bash
+# 在 .env 或 systemd 中设置
+AIMS_LOG_MAX_BYTES=10485760    # 单个日志文件最大字节数（默认 10MB）
+AIMS_LOG_BACKUP_COUNT=5        # 保留的备份文件数（默认 5）
+```
+
 ### 目录结构说明
 
 ```text
-/opt/aims/
+/home/ubuntu/projects/aims/
 ├── backend/              FastAPI 后端
 ├── frontend/             React 前端
 ├── storage/              SQLite 数据库目录
@@ -376,7 +428,8 @@ https://your-domain.com/api/...   → API 接口
 │   │   ├── start-aims.sh    Linux 启动脚本 (端口 18765, 绑定 127.0.0.1)
 │   │   ├── stop-aims.sh     Linux 停止脚本
 │   │   ├── aims.service     systemd 服务单元
-│   │   └── aims-nginx.conf  Nginx 反向代理配置模板
+│   │   ├── aims-nginx.conf  Nginx 反向代理配置模板
+│   │   └── logrotate-aims.conf  logrotate 日志轮替配置
 │   └── windows/          Windows 启动/停止脚本
 ├── start.sh              Linux 启动入口
 └── stop.sh               Linux 停止入口

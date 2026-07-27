@@ -7,21 +7,27 @@ AIMS Ubuntu UAT 使用说明
 - Git（如果通过仓库部署）
 
 启动系统
-1. 进入项目目录： cd /opt/aims
+1. 进入项目目录： cd /home/ubuntu/projects/aims
 2. 激活 conda 环境： conda activate py3127
 3. 执行启动脚本： bash start.sh
 4. 如果配置了 Nginx 反向代理，访问 https://你的域名/
    如果没有，AIMS 仅监听 127.0.0.1:18765（本机），需要 SSH 隧道或 Nginx 才能从外部访问。
 
 停止系统
-1. 进入项目目录： cd /opt/aims
+1. 进入项目目录： cd /home/ubuntu/projects/aims
 2. 执行停止脚本： bash stop.sh
 
 日志查看
-- 运行日志： logs/aims.log
-- 标准输出： logs/aims.stdout.log
-- 错误日志： logs/aims.stderr.log
-- 查看实时日志： tail -f logs/aims.log
+
+如果使用 systemd 启动（推荐）：
+- sudo journalctl -u aims -f          # 实时日志（自动轮替，不会占满磁盘）
+- sudo journalctl -u aims --since today  # 今天的所有日志
+
+如果使用脚本启动（./start.sh）：
+- 运行日志： logs/aims.log（自动轮替：每 10MB 切割，保留 5 个备份）
+- 标准输出： logs/aims.stdout.log（需配合 logrotate 轮替）
+- 错误日志： logs/aims.stderr.log（需配合 logrotate 轮替）
+- 实时查看： tail -f logs/aims.log
 
 常见问题
 1. 如果端口 18765 被占用，请修改端口后重启：

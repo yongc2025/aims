@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # AIMS startup script for Ubuntu/Linux
+# Note: logs/aims.log uses RotatingFileHandler (10MB, 5 backups).
+# stdout/stderr redirects here do NOT auto-rotate.
+# For production, prefer systemd (aims.service → journald) or set up logrotate:
+#   sudo cp scripts/linux/logrotate-aims.conf /etc/logrotate.d/aims
 set -euo pipefail
 
 PORT="${1:-18765}"

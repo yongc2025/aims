@@ -2,6 +2,7 @@
 
 import logging
 import os
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -15,10 +16,19 @@ from backend.api.reports import router as reports_router
 from backend.storage.database import init_database
 from backend.tasks.scheduler import start_scheduler, stop_scheduler
 
-# Configure root logger to write UTF-8 log file when AIMS_LOG_FILE is set
+# Configure root logger with size-based rotation when AIMS_LOG_FILE is set
+# Default: 10 MB per file, keep 5 backups
 log_file = os.environ.get("AIMS_LOG_FILE")
 if log_file:
-    file_handler = logging.FileHandler(log_file, encoding="utf-8", mode="a")
+    max_bytes = int(os.environ.get("AIMS_LOG_MAX_BYTES", str(10 * 1024 * 1024)))
+    backup_count = int(os.environ.get("AIMS_LOG_BACKUP_COUNT", "5"))
+    file_handler = RotatingFileHandler(
+        log_file,
+        encoding="utf-8",
+        mode="a",
+        maxBytes=max_bytes,
+        backupCount=backup_count,
+    )
     file_handler.setFormatter(logging.Formatter(
         fmt="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%H:%M:%S",

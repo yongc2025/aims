@@ -7,10 +7,10 @@ After=network.target
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/opt/aims
+WorkingDirectory=/home/ubuntu/projects/aims
 
 # Environment
-Environment=AIMS_LOG_FILE=/opt/aims/logs/aims.log
+Environment=AIMS_LOG_FILE=/home/ubuntu/projects/aims/logs/aims.log
 Environment=LLM_PROVIDER=opencode
 Environment=OPENCODE_BASE_URL=https://api.deepseek.com/v1
 Environment=OPENCODE_API_KEY=<YOUR_API_KEY>
@@ -37,13 +37,14 @@ Environment=all_proxy=
 ExecStart=/home/ubuntu/miniconda3/envs/py3127/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 18765
 
 # Option B: .venv (venv / virtualenv)
-# ExecStart=/opt/aims/.venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 18765
+# ExecStart=/home/ubuntu/projects/aims/.venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 18765
 
 ExecReload=/bin/kill -HUP $MAINPID
 
-# Logging
-StandardOutput=append:/opt/aims/logs/aims.stdout.log
-StandardError=append:/opt/aims/logs/aims.stderr.log
+# Logging — use journald (journalctl -u aims -f) to view logs.
+# journald handles rotation automatically via SystemMaxUse=  in /etc/systemd/journald.conf
+StandardOutput=journal
+StandardError=journal
 
 # Restart policy
 Restart=on-failure
