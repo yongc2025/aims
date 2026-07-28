@@ -362,6 +362,8 @@ def _sina_index_rows(errors: list[dict[str, str]]) -> list[dict[str, Any]]:
         "s_sh000001": "上证指数",
         "s_sz399001": "深证成指",
         "s_sz399006": "创业板指",
+        "s_sh000688": "科创50",
+        "s_sh000300": "沪深300",
     }
     url = f"https://hq.sinajs.cn/list={','.join(symbols)}"
 
@@ -452,6 +454,69 @@ def _akshare_index_row(symbol: str, name: str, trade_date: str) -> dict[str, Any
     }
 
 
+def _tencent_index_rows(errors: list[dict[str, str]]) -> list[dict[str, Any]]:
+    """Fetch index data from Tencent API (qt.gtimg.cn) as fallback."""
+    symbols = {
+        "sh000001": "上证指数",
+        "sz399001": "深证成指",
+        "sz399006": "创业板指",
+        "sh000688": "科创50",
+        "sh000300": "沪深300",
+    }
+    url = f"http://qt.gtimg.cn/q={','.join(symbols.keys())}"
+
+    try:
+        response = requests.get(
+            url,
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=10,
+        )
+        response.raise_for_status()
+    except Exception as exc:
+        errors.append({"source": "tencent.qt.gtimg.cn:index", "error": f"{type(exc).__name__}: {exc}"})
+        return []
+
+    rows: list[dict[str, Any]] = []
+    for line in response.text.strip().split("\n"):
+        line = line.strip()
+        if '="' not in line:
+            continue
+        key = line.split('="', 1)[0].replace("v_", "")
+        name = symbols.get(key)
+        if not name:
+            continue
+
+        fields = line.split('="', 1)[1].rstrip('";').split("~")
+        if len(fields) < 35:
+            continue
+
+        close = _number_or_none(fields[3])
+        change_pct = _number_or_none(fields[32])
+        volume = _number_or_none(fields[6])
+        high = _number_or_none(fields[33])
+        low = _number_or_none(fields[34])
+        open_price = _number_or_none(fields[5])
+        amount_wan = _number_or_none(fields[37])
+        amount = amount_wan * 10000 if amount_wan is not None else None
+
+        rows.append(
+            {
+                "name": name,
+                "index_name": name,
+                "close": close,
+                "change_pct": change_pct,
+                "high": high,
+                "low": low,
+                "open": open_price,
+                "amount": amount,
+                "volume": volume,
+                "source": f"tencent.qt.gtimg.cn:{key}",
+            }
+        )
+
+    return rows
+
+
 def _index_rows(
     trade_date: str,
     errors: list[dict[str, str]],
@@ -468,6 +533,8 @@ def _index_rows(
         ("sh000001", "上证指数"),
         ("sz399001", "深证成指"),
         ("sz399006", "创业板指"),
+        ("sh000688", "科创50"),
+        ("sh000300", "沪深300"),
     ]
     rows = []
     for symbol, name in targets:
@@ -482,8 +549,15 @@ def _index_rows(
         else:
             _log_api("东方财富", trade_date, f"stock_zh_index_daily_em:{symbol}", "❌ 失败")
     if rows:
-        _log_api("东方财富", trade_date, "stock_zh_index_daily_em", f"✅ 成功 {len(rows)}/3条")
-    return rows
+        _log_api("东方财富", trade_date, "stock_zh_index_daily_em", f"✅ 成功 {len(rows)}/{len(targets)}条")
+        return rows
+
+    # Final fallback: Tencent API
+    _log("东方财富指数失败，尝试腾讯API...")
+    tencent_rows = _tencent_index_rows(errors)
+    if tencent_rows:
+        _log_api("腾讯", trade_date, "qt.gtimg.cn:index", f"✅ 成功 {len(tencent_rows)}条")
+    return tencent_rows
 
 
 def _market_statistics_from_spot(spot: pd.DataFrame) -> dict[str, int | float | None]:
