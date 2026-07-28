@@ -218,6 +218,12 @@ def _safe_list(source: str, errors: list[dict[str, str]], loader) -> list[dict[s
     return []
 
 
+def _is_bj_code(code: Any) -> bool:
+    """Check if a stock code belongs to 北交所."""
+    code_str = str(code or "").strip().zfill(6)
+    return code_str[:2] in ("92", "43", "83", "87", "88")
+
+
 def _limit_chain_stocks(limit_up_pool: pd.DataFrame) -> list[dict[str, Any]]:
     if limit_up_pool.empty:
         _log("涨停池为空，连板股列表跳过")
@@ -231,9 +237,12 @@ def _limit_chain_stocks(limit_up_pool: pd.DataFrame) -> list[dict[str, Any]]:
     )
 
     for _, row in sorted_pool.head(50).iterrows():
+        stock_code = str(row.get("代码", ""))
+        if _is_bj_code(stock_code):
+            continue
         rows.append(
             {
-                "stock_code": str(row.get("代码", "")),
+                "stock_code": stock_code,
                 "stock_name": str(row.get("名称", "")),
                 "chain_days": _number_or_none(row.get("连板数")),
                 "change_pct": _number_or_none(row.get("涨跌幅")),
@@ -666,9 +675,14 @@ def _sector_limit_top(
     if limit_up_pool.empty or "所属行业" not in limit_up_pool.columns:
         return []
 
+    # Filter out 北交所 stocks
+    pool = limit_up_pool.copy()
+    if "代码" in pool.columns:
+        pool = pool[~pool["代码"].astype(str).apply(_is_bj_code)]
+
     industry_meta = _industry_lookup(industry_board)
     grouped = (
-        limit_up_pool.dropna(subset=["所属行业"])
+        pool.dropna(subset=["所属行业"])
         .groupby("所属行业")
         .size()
         .reset_index(name="limit_up_count")
@@ -1080,6 +1094,23 @@ class AkShareMarketDataProvider:
         else:
             _log_api("东方财富", trade_date, "stock_board_industry_name_em", "⏭️ 跳过")
 
+        # 计算涨跌幅>=9%和<=-9%的股票数量（排除北交所）
+        if tencent_snapshot:
+            limit_up_ge_9 = sum(
+                1 for s in tencent_snapshot
+                if (s.get('change_pct') or 0) >= 9
+                and not str(s.get('stock_code', '') or '')[:2] in ('92', '43', '83', '87', '88')
+            )
+            limit_down_le_neg9 = sum(
+                1 for s in tencent_snapshot
+                if (s.get('change_pct') or 0) <= -9
+                and not str(s.get('stock_code', '') or '')[:2] in ('92', '43', '83', '87', '88')
+            )
+        else:
+            limit_up_ge_9 = int(len(limit_up_pool))
+            limit_down_le_neg9 = int(len(limit_down_pool))
+        _log("涨跌幅>=9%%: %d 跌跌幅>=9%%: %d (已排除北交所)", limit_up_ge_9, limit_down_le_neg9)
+
         _log("组装日报...")
         limit_chain = _limit_chain_stocks(limit_up_pool)
         snapshot = tencent_snapshot or []
@@ -1122,8 +1153,8 @@ class AkShareMarketDataProvider:
                 "up_count": spot_statistics["up_count"],
                 "down_count": spot_statistics["down_count"],
                 "flat_count": spot_statistics["flat_count"],
-                "limit_up_count": int(len(limit_up_pool)),
-                "limit_down_count": int(len(limit_down_pool)),
+                "limit_up_count": limit_up_ge_9,
+                "limit_down_count": limit_down_le_neg9,
             },
             "limit_chain_stocks": limit_chain,
             "stock_snapshot": snapshot,

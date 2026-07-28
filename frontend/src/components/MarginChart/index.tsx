@@ -182,7 +182,7 @@ export default function MarginChart({ data = [] }: MarginChartProps) {
     <div className="card flex h-[300px] min-w-0 flex-col overflow-hidden rounded-lg border border-aims-border bg-aims-card">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-aims-border px-5 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-white">融资金额趋势</span>
+          <span className="text-sm font-semibold text-white">融资金额趋势（沪深）</span>
           <span className="font-mono text-[11px] text-aims-primary">{current}</span>
         </div>
         <span className="font-mono text-[11px] text-white/35">最近约3年</span>

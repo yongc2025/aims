@@ -189,13 +189,13 @@ export default function Dashboard() {
             statusColor="#00D4FF"
           />
           <KPICard
-            label="涨停"
+            label="涨幅≥9%"
             value={dashboard.limitUp}
             sub={dashboard.usingFallback ? '暂无数据' : visibleDate}
             statusColor="#00E676"
           />
           <KPICard
-            label="跌停"
+            label="跌幅≥9%"
             value={dashboard.limitDown}
             sub={dashboard.usingFallback ? '暂无数据' : visibleDate}
             statusColor="#FF5252"
